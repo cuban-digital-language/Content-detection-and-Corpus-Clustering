@@ -1,11 +1,11 @@
 import os
 import pickle
-from turtle import color
 from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.hierarchy import dendrogram
 import sys
+from sklearn.model_selection import ShuffleSplit
 
 from sklearn.neighbors import KNeighborsClassifier
 from itertools import cycle, islice
@@ -59,10 +59,14 @@ def fit_cluster_class(vectors):
         linkage='single'
     )
 
+    print("##### Agglomerative ########")
     Y = cluster.fit_predict(vectors)
+    print(f"n cluster", cluster.n_clusters_)
 
     model = KNeighborsClassifier(
         2 * cluster.n_clusters_ + 1, metric='cosine', n_jobs=5)
+
+    print("##### KNN ########")
     model.fit(vectors, Y)
 
     return cluster, model
@@ -110,10 +114,13 @@ def loadData(path: str, type: str = ''):
 
 if __name__ == '__main__':
     v, _ = loads()
+    split = ShuffleSplit(n_splits=1, test_size=.9)
+    v = [v[index] for index in next(split.split(v))[0]]
     cluster, knn = fit_cluster_class(v)
-
+    print("##### SAVE ########")
     serialize_cluster = pickle.dumps(knn)
     saveData(serialize_cluster, 'cluster', 'b')
 
+    print("##### PLOT ########")
     color, y = colors(cluster)
     view_points(v, color[y])

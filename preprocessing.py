@@ -1,4 +1,3 @@
-from asyncio import tasks
 import os
 import ast
 from matplotlib import pyplot as plt
@@ -8,6 +7,7 @@ from tokenizer.custom_tokenizer import CustomToken, SpacyCustomTokenizer
 import sys
 import numpy as np
 import json
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 def files_list(folder):
@@ -41,7 +41,7 @@ def doc2vec(files):
     vocabulary = set()
     nlp = SpacyCustomTokenizer()
     _len_ = len(files)
-    bar = pb(_len_, f' {_len_} ')
+    bar = pb(_len_, f' tokenizer {_len_} ')
     for i, data in enumerate(load(files, 'tokens')):
         matrix.append(nlp.nlp(data[0]).vector)
         s = set()
@@ -59,15 +59,18 @@ def doc2vec(files):
             lemma = token.lemma.lower()
             vocabulary.add(lemma)
             s.add(lemma)
-
-        document.append(list(s))
+            # s += lemma + " "
+        document.append(s)
         bar.update(i+1)
     bar.finish()
 
-    d = np.zeros((len(document), len(vocabulary)))
-    # print("SVD decomposition")
-    # truncatedSVD = TruncatedSVD(96)
-    # X_truncate = truncatedSVD.fit_transform(matrix)
+    # tf = TfidfVectorizer()
+    # matrix = tf.fit_transform(document)
+
+    # if matrix.shape > (len(document), 96):
+    #     print("SVD decomposition")
+    #     truncatedSVD = TruncatedSVD(96)
+    #     matrix = truncatedSVD.fit_transform(matrix)
 
     return matrix, document
 
