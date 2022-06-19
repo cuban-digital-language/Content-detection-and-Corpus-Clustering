@@ -1,8 +1,17 @@
+import os
+import pickle
+from turtle import color
 from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.hierarchy import dendrogram
 import sys
+
+from sklearn.neighbors import KNeighborsClassifier
+from itertools import cycle, islice
+import numpy as np
+
+from preprocessing import loads, view_points
 
 
 def plot_dendrogram(model, **kwargs):
@@ -40,3 +49,71 @@ def agglomerative(vectors):
     data = plot_dendrogram(model)
     plt.xlabel("Number of points in node (or index of point if no parenthesis).")
     plt.show()
+
+
+def fit_cluster_class(vectors):
+    cluster = AgglomerativeClustering(
+        distance_threshold=0.3,
+        n_clusters=None,
+        affinity='cosine',
+        linkage='single'
+    )
+
+    Y = cluster.fit_predict(vectors)
+
+    model = KNeighborsClassifier(
+        2 * cluster.n_clusters_ + 1, metric='cosine', n_jobs=5)
+    model.fit(vectors, Y)
+
+    return cluster, model
+
+
+def colors(model):
+
+    y_pred = model.labels_.astype(int)
+
+    color = np.array(
+        list(
+            islice(
+                cycle(
+                    [
+                        "#377eb8",
+                        "#ff7f00",
+                        "#4daf4a",
+                        "#f781bf",
+                        "#a65628",
+                        "#984ea3",
+                        "#999999",
+                        "#e41a1c",
+                        "#dede00",
+                    ]
+                ),
+                int(max(y_pred) + 1),
+            )
+        )
+    )
+
+    return color, y_pred
+
+
+def saveData(data: str, path: str, type: str = ''):
+    with open(os.path.join(f'{os.getcwd()}/result', path), f'w{type}') as f:
+        f.write(data)
+
+
+def loadData(path: str, type: str = ''):
+    with open(os.path.join(f'{os.getcwd()}/result', path), f'r{type}') as f:
+        text = f.read()
+        f.close()
+    return text
+
+
+if __name__ == '__main__':
+    v, _ = loads()
+    cluster, knn = fit_cluster_class(v)
+
+    serialize_cluster = pickle.dumps(knn)
+    saveData(serialize_cluster, 'cluster', 'b')
+
+    color, y = colors(cluster)
+    view_points(v, color[y])

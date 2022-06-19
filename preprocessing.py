@@ -1,3 +1,4 @@
+from asyncio import tasks
 import os
 import ast
 from matplotlib import pyplot as plt
@@ -37,7 +38,7 @@ def data_to_token(data):
 def doc2vec(files):
     document = []
     matrix = []
-
+    vocabulary = set()
     nlp = SpacyCustomTokenizer()
     _len_ = len(files)
     bar = pb(_len_, f' {_len_} ')
@@ -56,13 +57,14 @@ def doc2vec(files):
                     or token.is_digit()):
                 continue
             lemma = token.lemma.lower()
-
+            vocabulary.add(lemma)
             s.add(lemma)
 
         document.append(list(s))
         bar.update(i+1)
     bar.finish()
 
+    d = np.zeros((len(document), len(vocabulary)))
     # print("SVD decomposition")
     # truncatedSVD = TruncatedSVD(96)
     # X_truncate = truncatedSVD.fit_transform(matrix)
@@ -92,13 +94,13 @@ def loads():
     return vectors, document
 
 
-def view_points(vectors):
+def view_points(vectors, tags=None):
     truncatedSVD = TruncatedSVD(2)
     X_truncate_plot = truncatedSVD.fit_transform(vectors)
 
     x = [point[0] for point in X_truncate_plot]
     y = [point[1] for point in X_truncate_plot]
-    plt.scatter(x, y)
+    plt.scatter(x, y, c=tags)
     plt.show()
 
 
