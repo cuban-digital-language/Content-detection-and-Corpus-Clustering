@@ -3,7 +3,7 @@ import ast
 from matplotlib import pyplot as plt
 import progressbar
 from sklearn.decomposition import TruncatedSVD
-from tokenizer.custom_tokenizer import CustomToken, SpacyCustomTokenizer
+#from tokenizer.custom_tokenizer import CustomToken, SpacyCustomTokenizer
 import sys
 import numpy as np
 import json
@@ -29,51 +29,51 @@ def pb(len_, name=""):
     return bar
 
 
-def data_to_token(data):
-    token = CustomToken(data["text"], lex=data['lemma'],
-                        is_stop=data['is_stop'], is_sy=data['is_symbol'])
-    return token
-
-
-def doc2vec(files):
-    document = []
-    matrix = []
-    vocabulary = set()
-    nlp = SpacyCustomTokenizer()
-    _len_ = len(files)
-    bar = pb(_len_, f' tokenizer {_len_} ')
-    for i, data in enumerate(load(files, 'tokens')):
-        matrix.append(nlp.nlp(data[0]).vector)
-        s = set()
-        for token in data[1]:
-            token = data_to_token(token)
-
-            if (token.is_stop
-                or token.is_symbol
-                or token.space()
-                or token.is_emoji()
-                or token.is_url()
-                # or token.is_date()
-                    or token.is_digit()):
-                continue
-            lemma = token.lemma.lower()
-            vocabulary.add(lemma)
-            s.add(lemma)
-            # s += lemma + " "
-        document.append(s)
-        bar.update(i+1)
-    bar.finish()
-
-    # tf = TfidfVectorizer()
-    # matrix = tf.fit_transform(document)
-
-    # if matrix.shape > (len(document), 96):
-    #     print("SVD decomposition")
-    #     truncatedSVD = TruncatedSVD(96)
-    #     matrix = truncatedSVD.fit_transform(matrix)
-
-    return matrix, document
-
+# def data_to_token(data):
+#     token = CustomToken(data["text"], lex=data['lemma'],
+#                         is_stop=data['is_stop'], is_sy=data['is_symbol'])
+#     return token
+#
+#
+# def doc2vec(files):
+#     document = []
+#     matrix = []
+#     vocabulary = set()
+#     nlp = SpacyCustomTokenizer()
+#     _len_ = len(files)
+#     bar = pb(_len_, f' tokenizer {_len_} ')
+#     for i, data in enumerate(load(files, 'tokens')):
+#         matrix.append(nlp.nlp(data[0]).vector)
+#         s = set()
+#         for token in data[1]:
+#             token = data_to_token(token)
+#
+#             if (token.is_stop
+#                 or token.is_symbol
+#                 or token.space()
+#                 or token.is_emoji()
+#                 or token.is_url()
+#                 # or token.is_date()
+#                     or token.is_digit()):
+#                 continue
+#             lemma = token.lemma.lower()
+#             vocabulary.add(lemma)
+#             s.add(lemma)
+#             # s += lemma + " "
+#         document.append(s)
+#         bar.update(i+1)
+#     bar.finish()
+#
+#     # tf = TfidfVectorizer()
+#     # matrix = tf.fit_transform(document)
+#
+#     # if matrix.shape > (len(document), 96):
+#     #     print("SVD decomposition")
+#     #     truncatedSVD = TruncatedSVD(96)
+#     #     matrix = truncatedSVD.fit_transform(matrix)
+#
+#     return matrix, document
+#
 
 def save(vectors, document):
 
@@ -107,14 +107,14 @@ def view_points(vectors, tags=None):
     plt.show()
 
 
-if __name__ == '__main__':
-    cmd = sys.argv[1] if len(sys.argv) == 2 else ''
-    if cmd == 'plot':
-        print("ONLY PLOT")
-        v, _ = loads()
-    else:
-        files = files_list('tokens')
-        v, d = doc2vec(files)
-        save(v, d)
-    v, _ = loads()
-    view_points(v)
+# if __name__ == '__main__':
+#     cmd = sys.argv[1] if len(sys.argv) == 2 else ''
+#     if cmd == 'plot':
+#         print("ONLY PLOT")
+#         v, _ = loads()
+#     else:
+#         files = files_list('tokens')
+#         v, d = doc2vec(files)
+#         save(v, d)
+#     v, _ = loads()
+#     view_points(v)
