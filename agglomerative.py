@@ -101,12 +101,12 @@ def colors(model):
 
 
 def saveData(data: str, path: str, type: str = ''):
-    with open(os.path.join(f'{os.getcwd()}/result', path), f'w{type}') as f:
+    with open(os.path.join(f'{os.getcwd()}/results', path), f'w{type}') as f:
         f.write(data)
 
 
 def loadData(path: str, type: str = ''):
-    with open(os.path.join(f'{os.getcwd()}/result', path), f'r{type}') as f:
+    with open(os.path.join(f'{os.getcwd()}/results', path), f'r{type}') as f:
         text = f.read()
         f.close()
     return text

@@ -10,19 +10,14 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from plot_learning_curve import plot_learning_curve
 import matplotlib.pyplot as plt
+from sklearn import tree
 
 
 def training_cluster():
-    # files = files_list('tokens')
-    # print("total", len(files))
-    # split = ShuffleSplit(n_splits=1, test_size=.7)
-    # files = [files[index] for index in next(split.split(files))[0]]
-    # print('split', len(files))
-
     print('load vectors')
     vectors, documents = loads()
     print('split data')
-    split = ShuffleSplit(n_splits=1, test_size=.8)
+    split = ShuffleSplit(n_splits=1, test_size=.92)
 
     vectors = [vectors[index] for index in next(split.split(vectors))[0]]
     # print(vectors)
@@ -39,11 +34,13 @@ def training_cluster():
     print("##### Agglomerative ########")
     Y = cluster.fit_predict(vectors)
     print(f"n cluster", cluster.n_clusters_)
-
+    print('passs')
     serialize_cluster = pickle.dumps(cluster)
     saveData(serialize_cluster, 'cluster', 'b')
-    saveData(Y, 'labels', 'b')
+    serialize_labels = pickle.dumps(Y)
+    saveData(serialize_labels, 'labels', 'b')
     save2(vectors)
+    print('end cluster training')
 
 
 def save2(vectors):
@@ -59,17 +56,22 @@ def training_models():
     vectors = load2()
     labels = pickle.loads(loadData('labels', 'b'))
     # KNN
+    print(cluster.n_clusters_)
     knn = KNeighborsClassifier(
-        2 * cluster.n_clusters_ + 1, metric='cosine', n_jobs=5)
+        cluster.n_clusters_, metric='cosine', n_jobs=5)
 
     print("##### KNN ########")
     knn.fit(vectors, labels)
 
     # SVM
-    svm = SVC(2 * cluster.n_clusters_ + 1, metric='cosine', n_jobs=5)
+    svm = SVC()
 
     print("##### SVM #####")
     svm.fit(vectors, labels)
+
+    print("###### Descicion Tree")
+    clf = tree.DecisionTreeClassifier(random_state=0)
+    clf.fit(vectors, labels)
 
     # save models
     # save knn
@@ -79,29 +81,100 @@ def training_models():
     serialize_svm = pickle.dumps(svm)
     saveData(serialize_svm, 'svm_model', 'b')
 
+    # save DecisionTree
+    serialize_clf = pickle.dumps(clf)
+    saveData(serialize_clf, 'clf_model', 'b')
 
-def grafic_models():
-    knn = pickle.loads(loadData('knn_model', 'b'))
-    svm = pickle.loads(loadData('svm_model', 'b'))
+
+def graphic_models():
+    # load models
+    # knn = pickle.loads(loadData('knn_model', 'b'))
+    # svm = pickle.loads(loadData('svm_model', 'b'))
+    # clf = pickle.loads(loadData('clf_model', 'b'))
+
+    cluster = pickle.loads(loadData('cluster', 'b'))
+    # models
+    knn = KNeighborsClassifier(
+        cluster.n_clusters_, metric='cosine', n_jobs=5)
+    svm = SVC(decision_function_shape='ovr', random_state=False)
+    clf = tree.DecisionTreeClassifier(random_state=0)
+
+    # load training vectors and labels
     vectors = load2()
     labels = pickle.loads(loadData('labels', 'b'))
+
+    X, y = vectors, labels
+
+    title = "Learning Curves (KNN)"
+    # Cross validation with 50 iterations to get smoother mean test and train
+    # score curves, each time with 20% data randomly selected as a validation set.
+    cv = ShuffleSplit(n_splits=50, test_size=0.2, random_state=0)
+
+    estimator = knn
+    print('graphic learning curve knn')
+    plot_learning_curve(
+        estimator, title, X, y, ylim=(0.7, 1.01), cv=cv, n_jobs=4
+    )
+    plt.show()
+
+    title = "Learning Curves (SVM)"
+    # Cross validation with 50 iterations to get smoother mean test and train
+    # score curves, each time with 20% data randomly selected as a validation set.
+    cv = ShuffleSplit(n_splits=50, test_size=0.5, random_state=0)
+    print('graphic learning curve svm')
+    estimator = svm
+    plot_learning_curve(
+        estimator, title, X, y, ylim=(0.7, 1.01), cv=cv, n_jobs=4
+    )
+
+    title = "Learning Curves (CLF)"
+    # Cross validation with 50 iterations to get smoother mean test and train
+    # score curves, each time with 20% data randomly selected as a validation set.
+    cv = ShuffleSplit(n_splits=50, test_size=0.5, random_state=0)
+
+    estimator = clf
+    print('graphic learning curve clf')
+    plot_learning_curve(
+        estimator, title, X, y, ylim=(0.7, 1.01), cv=cv, n_jobs=4
+    )
+
+    plt.show()
+
+
+def score_models():
+    # knn = pickle.loads(loadData('knn_model', 'b'))
+    # svm = pickle.loads(loadData('svm_model', 'b'))
+    # clf = pickle.loads(loadData('clf_model', 'b'))
+
+    cluster = pickle.loads(loadData('cluster', 'b'))
+    # models
+    knn = KNeighborsClassifier(
+        cluster.n_clusters_, metric='cosine', n_jobs=5)
+    svm = SVC(random_state=0)
+    clf = tree.DecisionTreeClassifier(random_state=0)
+    ########
+    vectors = load2()
+    labels = pickle.loads(loadData('labels', 'b'))
+
+    print('start split data')
     xtrain, xtest, ytrain, ytest = train_test_split(vectors, labels, train_size=0.6)
 
     # train and test
     # knn
+    print('fit knn')
     knn.fit(xtrain, ytrain)
-    knn.score(xtest, ytest)
+    print(knn.score(xtest, ytest))
 
+    print('fit svm')
     svm.fit(xtrain, ytrain)
-    svm.score(xtest, ytest)
+    print(svm.score(xtest, ytest))
 
-    # ver si esto se puede quitar
-    cv = ShuffleSplit(n_splits=1, test_size=.7)
-
-    fig, axes = plt.subplots(3, 2, figsize=(10, 15))
-    plot_learning_curve(
-        knn, "", vectors, labels, axes=axes[:, 0], ylim=(0.7, 1.01), cv=cv, n_jobs=4
-    )
+    print('fit clf')
+    clf.fit(xtrain, ytrain)
+    print(clf.score(xtest, ytest))
 
 
 training_cluster()
+# training_models()
+# score_models()
+graphic_models()
